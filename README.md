@@ -14,4 +14,6 @@ Multi-Region Support: Receives EEW alerts from:
 Real-Time Alerts: Displays detailed information such as magnitude, depth, location, maximum intensity, and more.
 ### Our discord server: https://discord.gg/V6BXY9A6vv
 
-# Please keep in mind this was a very old project and may contain a lot of critical bugs
+# IMPORTANT:
+Please keep in mind this project is old, a lot of parts of it were not tested and probably contains a lot of bugs
+
