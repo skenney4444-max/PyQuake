@@ -4,3 +4,8 @@ playsound
 plyer
 pyttsx3
 PyQt6
+ursina
+imageio
+Pillow
+flask
+requests

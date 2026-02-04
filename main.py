@@ -6,6 +6,17 @@ import ctypes
 from plyer import notification
 import json
 import logging
+import subprocess
+import sys
+import time
+
+# Auto-launch settings for the visual demo
+DEMO_PROC = None
+DEMO_AUTO_LAUNCH_THRESHOLD = 6.0  # magnitude threshold to auto-launch the demo
+DEMO_SCRIPT = 'demo_impressive.py'
+DEMO_LAST_LAUNCH = 0
+DEMO_LAUNCH_COOLDOWN = 10  # seconds between launch attempts
+
 NoW = False
 language = 'CH'
 # You can choose CH EN ES JP PL SK
@@ -159,6 +170,45 @@ def on_message(ws, message):
         alert = noEEW()
         alert.noAlert()
         NoW = True
+
+    # Send a simple UDP trigger for visual demos (local IPC)
+    try:
+        import socket, json as __json
+        mag = data.get('Magunitude') or data.get('Mag') or data.get('magnitude') or None
+        if mag is None and isinstance(data.get('Magunitude'), (int, float)):
+            mag = data.get('Magunitude')
+        if mag is not None:
+            mag_f = float(mag)
+            trigger = {
+                'magnitude': mag_f,
+                'type': data.get('type'),
+                'source': 'main.py'
+            }
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.sendto(__json.dumps(trigger).encode('utf-8'), ('127.0.0.1', 9999))
+            s.close()
+
+            # Auto-launch the impressive demo if magnitude above threshold
+            try:
+                global DEMO_PROC, DEMO_LAST_LAUNCH
+                now = time.time()
+                # cleanup previous process handle if exited
+                if DEMO_PROC is not None and DEMO_PROC.poll() is not None:
+                    DEMO_PROC = None
+                if mag_f >= DEMO_AUTO_LAUNCH_THRESHOLD and (DEMO_PROC is None) and (now - DEMO_LAST_LAUNCH > DEMO_LAUNCH_COOLDOWN):
+                    DEMO_LAST_LAUNCH = now
+                    script_path = os.path.join(os.path.dirname(__file__), DEMO_SCRIPT)
+                    if os.path.exists(script_path):
+                        print(f'Auto-launching demo ({script_path}) for M{mag_f:.1f}')
+                        # pass magnitude on CLI so demo triggers immediately
+                        DEMO_PROC = subprocess.Popen([sys.executable, script_path, '--magnitude', str(mag_f)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    else:
+                        print('Demo script not found, skipping auto-launch')
+            except Exception as e:
+                print('Auto-launch failed:', e)
+    except Exception as e:
+        # IPC is optional; ignore errors
+        print('IPC send failed:', e)
 
 # Function for handling errors
 def on_error(ws, error):
