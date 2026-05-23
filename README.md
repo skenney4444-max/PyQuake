@@ -1,19 +1,40 @@
-### English (orginal):
-# PyQuake - terminal EEW
-PyTremor is a prototype Earthquake Early Warning (EEW) monitoring tool that listens to various real-time EEW data sources using WebSocket connections. It provides detailed earthquake alerts for multiple regions, including Japan, China, and other parts of Asia.
-This is an early-stage project and is not yet production-ready. Feedback and contributions are highly encouraged to improve the system.
+# PyQuake — Mobile Seismic Wavefield Simulator
 
-Features
-Multi-Region Support: Receives EEW alerts from:
+PyQuake now includes a runnable Vite + React mobile web app for an interactive seismic wavefield simulator.
 
-- Japan Meteorological Agency (JMA EEW)
-- China Earthquake Networks Center (CENC EEW)
-- China Earthquake Administration (CWA EEW)
-- Sichuan EEW (SC EEW)
-- Fujian EEW (FJ EEW)
-Real-Time Alerts: Displays detailed information such as magnitude, depth, location, maximum intensity, and more.
-### Our discord server: https://discord.gg/V6BXY9A6vv
+## Run locally
 
-# IMPORTANT:
-Please keep in mind this project is old, a lot of parts of it were not tested and probably contains a lot of bugs
+```bash
+npm install
+npm run dev
+```
 
+Then open the local URL from your computer or phone browser.
+
+## Build for deployment
+
+```bash
+npm run build
+npm run preview
+```
+
+## Current app features
+
+- Mobile-friendly React/Vite app shell
+- Interactive canvas-based geological cross-section
+- Tap/click rupture triggering with custom hypocenter depth
+- Scenario selector for Hawaii, Cascadia, San Andreas, and mantle plume events
+- Live seismograph canvas
+- P-wave, S-wave, surface-wave, and aftershock particle visualizations
+- Optional Web Audio seismic sonification
+- Responsive dark command-center UI
+
+## Notes
+
+This is a visual educational simulator, not a production earthquake early-warning system.
+
+---
+
+## Original project note
+
+PyTremor was an early prototype Earthquake Early Warning monitoring tool for multiple EEW data sources. Older parts of this repository may be untested or incomplete.
