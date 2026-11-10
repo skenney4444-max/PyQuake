@@ -11,7 +11,11 @@ jobs:
         with:
           node-version: '22'
       - run: node --test tests/pause-regression.cjs
-      - run: npm install --ignore-scripts --no-package-lock
+      - run: npm install --ignore-scripts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dependency-lock
+          path: package-lock.json
       - run: npm run build
   python-syntax:
     runs-on: ubuntu-24.04
@@ -39,4 +43,10 @@ jobs:
         run: |
           python3 -m http.server 4173 --bind 127.0.0.1 --directory dist > /tmp/browser-app.log 2>&1 &
           trap 'kill $(jobs -p) || true' EXIT
+          ready=0
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then ready=1; break; fi
+            sleep 1
+          done
+          if [ "$ready" != 1 ]; then cat /tmp/browser-app.log; exit 1; fi
           node tests/browser-pause.cjs
