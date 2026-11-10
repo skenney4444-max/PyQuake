@@ -248,6 +248,7 @@ export default function App() {
   const canvasRef = useRef(null);
   const seismoRef = useRef(null);
   const particles = useRef([]);
+  const seismoBufferRef = useRef([]);
   const timeRef = useRef(0);
   const lastRef = useRef(0);
   const flagsRef = useRef({ p: false, s: false, surf: false, after: [] });
@@ -273,6 +274,7 @@ export default function App() {
     timeRef.current = 0;
     setSimTime(0);
     particles.current = [];
+    seismoBufferRef.current = [];
     flagsRef.current = { p: false, s: false, surf: false, after: [] };
     if (audioEnabled) audio.crack();
   };
@@ -424,17 +426,17 @@ export default function App() {
       drawBoundary(ctx, w, h, asthY, epicenter, 'rgba(69,10,10,0.43)', 'rgba(220,38,38,0.18)', t, layerOpacity);
 
       const flags = flagsRef.current;
-      if (t >= 2 && !flags.p) {
+      if (playing && t >= 2 && !flags.p) {
         flags.p = true;
         if (audioEnabled) { audio.crack(); audio.impact('p', mag); }
         emitRing(165, '#f97316', scenario.pVelocity * 12, 2.1, 1, 'p', epicenter);
       }
-      if (t >= 2.4 && !flags.s) {
+      if (playing && t >= 2.4 && !flags.s) {
         flags.s = true;
         if (audioEnabled) audio.impact('s', mag);
         emitRing(130, '#06b6d4', scenario.sVelocity * 12, 2.8, 1.45, 's', epicenter);
       }
-      if (t >= 3.3 && !flags.surf) {
+      if (playing && t >= 3.3 && !flags.surf) {
         flags.surf = true;
         if (audioEnabled) audio.impact('surf', mag);
         const n = Math.round(100 * particleDensity);
@@ -443,7 +445,7 @@ export default function App() {
           particles.current.push({ x: epicenter.x, y: crustY + 12, vx: dir * scenario.surfVelocity * 11 * (0.7 + Math.random() * 0.5), vy: (Math.random() - 0.5) * 2.5, color: '#fbbf24', size: 3.4 + Math.random() * 2.4, life: 2.4, maxLife: 2.8, type: 'surf', phase: Math.random() * 6 });
         }
       }
-      if (showAftershocks && t >= 8.5) {
+      if (playing && showAftershocks && t >= 8.5) {
         [8.8, 10.2, 11.5, 13].forEach((mark, idx) => {
           if (t >= mark && !flags.after.includes(idx)) {
             flags.after.push(idx);
@@ -526,10 +528,12 @@ export default function App() {
     if (!canvas) return undefined;
     const ctx = canvas.getContext('2d');
     let raf = 0;
-    let buffer = Array(canvas.width).fill(0);
+    if (!seismoBufferRef.current.length) seismoBufferRef.current = Array(canvas.width).fill(0);
     const draw = () => {
       const w = canvas.width;
       const h = canvas.height;
+      const buffer = seismoBufferRef.current;
+      if (!buffer.length) buffer.push(...Array(w).fill(0));
       ctx.clearRect(0, 0, w, h);
       ctx.fillStyle = '#090d16'; ctx.fillRect(0, 0, w, h);
       ctx.strokeStyle = 'rgba(14,116,144,0.16)';
