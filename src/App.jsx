@@ -227,6 +227,11 @@ const audio = new SeismicAudioEngine();
 export default function App() {
   const [scenarioKey, setScenarioKey] = useState('hawaii');
   const [playing, setPlaying] = useState(true);
+  const playingRef = useRef(playing);
+  useEffect(() => {
+    playingRef.current = playing;
+    if (!playing) audio.stop();
+  }, [playing]);
   const [timeScale, setTimeScale] = useState(1.2);
   const [particleDensity, setParticleDensity] = useState(1);
   const [bloom, setBloom] = useState(1.1);
@@ -340,10 +345,10 @@ export default function App() {
 
     const draw = (timestamp) => {
       if (!lastRef.current) lastRef.current = timestamp;
-      const dt = clamp((timestamp - lastRef.current) / 1000, 0, 0.1);
+      const dt = playing ? clamp((timestamp - lastRef.current) / 1000, 0, 0.1) * timeScale : 0;
       lastRef.current = timestamp;
       if (playing) {
-        timeRef.current += dt * timeScale;
+        timeRef.current += dt;
         if (timeRef.current > SIM_DURATION) reset();
         setSimTime(timeRef.current);
       }
@@ -451,7 +456,7 @@ export default function App() {
       }
       if (audioEnabled) {
         const envelope = t > 2 && t < 8.5 ? smoothstep(2, 4.5, t) * (1 - smoothstep(4.5, 8.5, t)) : 0;
-        audio.setRumble(envelope * mag / 9, 30 + envelope * 22);
+        audio.setRumble(playing ? envelope * mag / 9 : 0, 30 + envelope * 22);
       }
 
       ctx.save();
@@ -460,15 +465,15 @@ export default function App() {
         const p = particles.current[i];
         p.life -= dt;
         if (p.life <= 0) { particles.current.splice(i, 1); continue; }
-        p.vx *= 0.985;
-        p.vy *= 0.985;
+        p.vx *= Math.pow(0.985, dt * 60);
+        p.vy *= Math.pow(0.985, dt * 60);
         if (p.type === 's') {
           const angle = Math.atan2(p.vy, p.vx);
-          p.x += p.vx * dt * 4 + -Math.sin(angle) * Math.sin(p.life * 15 + p.phase) * 1.8;
-          p.y += p.vy * dt * 4 + Math.cos(angle) * Math.sin(p.life * 15 + p.phase) * 1.8;
+          p.x += p.vx * dt * 4 + -Math.sin(angle) * Math.sin(p.life * 15 + p.phase) * 1.8 * dt * 60;
+          p.y += p.vy * dt * 4 + Math.cos(angle) * Math.sin(p.life * 15 + p.phase) * 1.8 * dt * 60;
         } else if (p.type === 'surf') {
           p.x += p.vx * dt * 4;
-          p.y += p.vy * dt * 4 + Math.cos(p.x * 0.08 + p.life * 12) * 1.2;
+          p.y += p.vy * dt * 4 + Math.cos(p.x * 0.08 + p.life * 12) * 1.2 * dt * 60;
         } else {
           p.x += p.vx * dt * 4;
           p.y += p.vy * dt * 4;
@@ -536,8 +541,10 @@ export default function App() {
       if (t > 2.1) y += Math.sin((t - 2.1) * 45) * 4.5 * Math.exp(-(t - 2.1) * 1.45) * magFactor;
       if (t > 2.7) y += Math.sin((t - 2.7) * 24) * 12 * Math.exp(-(t - 2.7) * 0.78) * magFactor;
       if (t > 3.5) y += Math.sin((t - 3.5) * 9) * 22 * Math.exp(-(t - 3.5) * 0.38) * magFactor;
-      buffer.push(clamp(y, -55, 55));
-      if (buffer.length > w) buffer.shift();
+      if (playingRef.current) {
+        buffer.push(clamp(y, -55, 55));
+        if (buffer.length > w) buffer.shift();
+      }
       ctx.strokeStyle = params.color;
       ctx.lineWidth = 1.4;
       ctx.beginPath();
