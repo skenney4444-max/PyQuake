@@ -22,3 +22,21 @@ jobs:
           python-version: '3.12'
       # The desktop GUI has no automated tests yet; this checks parsing only.
       - run: python -m py_compile main.py
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --ignore-scripts --no-package-lock
+      - run: npm install --no-save --no-package-lock playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - name: Check pause and resume in Chromium
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory dist > /tmp/browser-app.log 2>&1 &
+          trap 'kill $(jobs -p) || true' EXIT
+          node tests/browser-pause.cjs
