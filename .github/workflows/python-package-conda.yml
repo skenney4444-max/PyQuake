@@ -12,6 +12,7 @@ jobs:
           node-version: '22'
       - run: node --test tests/pause-regression.cjs
       - run: npm install --ignore-scripts
+      - run: cat package-lock.json
       - uses: actions/upload-artifact@v4
         with:
           name: dependency-lock
