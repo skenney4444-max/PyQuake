@@ -11,12 +11,7 @@ jobs:
         with:
           node-version: '22'
       - run: node --test tests/pause-regression.cjs
-      - run: npm install --ignore-scripts
-      - run: cat package-lock.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: dependency-lock
-          path: package-lock.json
+      - run: npm ci --ignore-scripts
       - run: npm run build
   python-syntax:
     runs-on: ubuntu-24.04
@@ -36,9 +31,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install --ignore-scripts --no-package-lock
-      - run: npm install --no-save --no-package-lock playwright@1.56.1
-      - run: npx playwright install --with-deps chromium
+      - run: npm ci --ignore-scripts
+      - run: npm install --prefix /tmp/pyquake-browser --no-save --no-package-lock playwright@1.56.1
+      - run: /tmp/pyquake-browser/node_modules/.bin/playwright install --with-deps chromium
       - run: npm run build
       - name: Check pause and resume in Chromium
         run: |
@@ -50,4 +45,4 @@ jobs:
             sleep 1
           done
           if [ "$ready" != 1 ]; then cat /tmp/browser-app.log; exit 1; fi
-          node tests/browser-pause.cjs
+          NODE_PATH=/tmp/pyquake-browser/node_modules node tests/browser-pause.cjs
